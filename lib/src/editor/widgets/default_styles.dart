@@ -200,6 +200,7 @@ class DefaultStyles {
     this.sizeSmall,
     this.sizeLarge,
     this.sizeHuge,
+    this.palette,
   });
 
   final DefaultTextBlockStyle? h1;
@@ -236,6 +237,9 @@ class DefaultStyles {
   final DefaultTextBlockStyle? align;
   final DefaultTextBlockStyle? leading;
 
+  /// Custom palette of colors
+  final Map<String, Color>? palette;
+
   static DefaultStyles getInstance(BuildContext context) {
     final themeData = Theme.of(context);
     final defaultTextStyle = DefaultTextStyle.of(context);
@@ -271,7 +275,7 @@ class DefaultStyles {
           ),
           baseHorizontalSpacing,
           const VerticalSpacing(16, 0),
-          const VerticalSpacing(0, 0),
+          VerticalSpacing.zero,
           null),
       h2: DefaultTextBlockStyle(
           defaultTextStyle.style.copyWith(
@@ -284,7 +288,7 @@ class DefaultStyles {
           ),
           baseHorizontalSpacing,
           const VerticalSpacing(8, 0),
-          const VerticalSpacing(0, 0),
+          VerticalSpacing.zero,
           null),
       h3: DefaultTextBlockStyle(
         defaultTextStyle.style.copyWith(
@@ -297,7 +301,7 @@ class DefaultStyles {
         ),
         baseHorizontalSpacing,
         const VerticalSpacing(8, 0),
-        const VerticalSpacing(0, 0),
+        VerticalSpacing.zero,
         null,
       ),
       h4: DefaultTextBlockStyle(
@@ -311,7 +315,7 @@ class DefaultStyles {
         ),
         baseHorizontalSpacing,
         const VerticalSpacing(6, 0),
-        const VerticalSpacing(0, 0),
+        VerticalSpacing.zero,
         null,
       ),
       h5: DefaultTextBlockStyle(
@@ -325,7 +329,7 @@ class DefaultStyles {
         ),
         baseHorizontalSpacing,
         const VerticalSpacing(6, 0),
-        const VerticalSpacing(0, 0),
+        VerticalSpacing.zero,
         null,
       ),
       h6: DefaultTextBlockStyle(
@@ -339,42 +343,42 @@ class DefaultStyles {
         ),
         baseHorizontalSpacing,
         const VerticalSpacing(4, 0),
-        const VerticalSpacing(0, 0),
+        VerticalSpacing.zero,
         null,
       ),
       lineHeightNormal: DefaultTextBlockStyle(
         baseStyle.copyWith(height: 1.15),
         baseHorizontalSpacing,
-        const VerticalSpacing(0, 0),
-        const VerticalSpacing(0, 0),
+        VerticalSpacing.zero,
+        VerticalSpacing.zero,
         null,
       ),
       lineHeightTight: DefaultTextBlockStyle(
         baseStyle.copyWith(height: 1.30),
         baseHorizontalSpacing,
-        const VerticalSpacing(0, 0),
-        const VerticalSpacing(0, 0),
+        VerticalSpacing.zero,
+        VerticalSpacing.zero,
         null,
       ),
       lineHeightOneAndHalf: DefaultTextBlockStyle(
         baseStyle.copyWith(height: 1.55),
         baseHorizontalSpacing,
-        const VerticalSpacing(0, 0),
-        const VerticalSpacing(0, 0),
+        VerticalSpacing.zero,
+        VerticalSpacing.zero,
         null,
       ),
       lineHeightDouble: DefaultTextBlockStyle(
         baseStyle.copyWith(height: 2),
         baseHorizontalSpacing,
-        const VerticalSpacing(0, 0),
-        const VerticalSpacing(0, 0),
+        VerticalSpacing.zero,
+        VerticalSpacing.zero,
         null,
       ),
       paragraph: DefaultTextBlockStyle(
         baseStyle,
         baseHorizontalSpacing,
-        const VerticalSpacing(0, 0),
-        const VerticalSpacing(0, 0),
+        VerticalSpacing.zero,
+        VerticalSpacing.zero,
         null,
       ),
       bold: const TextStyle(fontWeight: FontWeight.bold),
@@ -422,8 +426,8 @@ class DefaultStyles {
             color: Colors.grey.withOpacity(0.6),
           ),
           baseHorizontalSpacing,
-          const VerticalSpacing(0, 0),
-          const VerticalSpacing(0, 0),
+          VerticalSpacing.zero,
+          VerticalSpacing.zero,
           null),
       lists: DefaultListBlockStyle(
         baseStyle,
@@ -453,7 +457,7 @@ class DefaultStyles {
           ),
           baseHorizontalSpacing,
           baseVerticalSpacing,
-          const VerticalSpacing(0, 0),
+          VerticalSpacing.zero,
           BoxDecoration(
             color: Colors.grey.shade50,
             borderRadius: BorderRadius.circular(2),
@@ -468,15 +472,15 @@ class DefaultStyles {
       align: DefaultTextBlockStyle(
         baseStyle,
         baseHorizontalSpacing,
-        const VerticalSpacing(0, 0),
-        const VerticalSpacing(0, 0),
+        VerticalSpacing.zero,
+        VerticalSpacing.zero,
         null,
       ),
       leading: DefaultTextBlockStyle(
         baseStyle,
         baseHorizontalSpacing,
-        const VerticalSpacing(0, 0),
-        const VerticalSpacing(0, 0),
+        VerticalSpacing.zero,
+        VerticalSpacing.zero,
         null,
       ),
       sizeSmall: const TextStyle(fontSize: 10),
@@ -518,6 +522,7 @@ class DefaultStyles {
       sizeSmall: other.sizeSmall ?? sizeSmall,
       sizeLarge: other.sizeLarge ?? sizeLarge,
       sizeHuge: other.sizeHuge ?? sizeHuge,
+      palette: other.palette ?? palette,
     );
   }
 }

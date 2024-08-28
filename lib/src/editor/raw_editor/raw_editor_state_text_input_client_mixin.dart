@@ -79,6 +79,19 @@ mixin RawEditorStateTextInputClientMixin on EditorState
       _updateComposingRectIfNeeded();
       //update IME position for Macos
       _updateCaretRectIfNeeded();
+
+      /// Trap selection extends off end of document
+      if (_lastKnownRemoteTextEditingValue != null) {
+        if (_lastKnownRemoteTextEditingValue!.selection.end >
+            _lastKnownRemoteTextEditingValue!.text.length) {
+          _lastKnownRemoteTextEditingValue = _lastKnownRemoteTextEditingValue!
+              .copyWith(
+                  selection: _lastKnownRemoteTextEditingValue!.selection
+                      .copyWith(
+                          extentOffset:
+                              _lastKnownRemoteTextEditingValue!.text.length));
+        }
+      }
       _textInputConnection!.setEditingState(_lastKnownRemoteTextEditingValue!);
     }
     _textInputConnection!.show();
@@ -198,10 +211,9 @@ mixin RawEditorStateTextInputClientMixin on EditorState
     final cursorPosition = value.selection.extentOffset;
     final diff = getDiff(oldText, text, cursorPosition);
     if (diff.deleted.isEmpty && diff.inserted.isEmpty) {
-      widget.configurations.controller
-          .updateSelection(value.selection, ChangeSource.local);
+      widget.controller.updateSelection(value.selection, ChangeSource.local);
     } else {
-      widget.configurations.controller.replaceText(
+      widget.controller.replaceText(
         diff.start,
         diff.deleted.length,
         diff.inserted,

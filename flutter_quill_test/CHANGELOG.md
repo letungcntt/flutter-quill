@@ -4,6 +4,187 @@
 
 All notable changes to this project will be documented in this file.
 
+## 10.4.8
+
+* Fix: direction has no opposite effect if the language is rtl by @CatHood0 in https://github.com/singerdmx/flutter-quill/pull/2154
+
+
+**Full Changelog**: https://github.com/singerdmx/flutter-quill/compare/v10.4.7...v10.4.8
+
+## 10.4.7
+
+* Fix: Unable to scroll 2nd editor window by @AtlasAutocode in https://github.com/singerdmx/flutter-quill/pull/2152
+
+
+**Full Changelog**: https://github.com/singerdmx/flutter-quill/compare/v10.4.6...v10.4.7
+
+## 10.4.6
+
+* Handle null child query by @jezell in https://github.com/singerdmx/flutter-quill/pull/2151
+
+
+**Full Changelog**: https://github.com/singerdmx/flutter-quill/compare/v10.4.5...v10.4.6
+
+## 10.4.5
+
+* chore!: move spell checker to example by @EchoEllet in https://github.com/singerdmx/flutter-quill/pull/2145
+
+
+**Full Changelog**: https://github.com/singerdmx/flutter-quill/compare/v10.4.4...v10.4.5
+
+## 10.4.4
+
+* fix custom recognizer builder not being passed to editabletextblock by @jezell in https://github.com/singerdmx/flutter-quill/pull/2143
+* fix null reference exception when dragging selection on non scrollable selection by @jezell in https://github.com/singerdmx/flutter-quill/pull/2144
+
+
+**Full Changelog**: https://github.com/singerdmx/flutter-quill/compare/v10.4.3...v10.4.4
+
+## 10.4.3
+
+* Chore: update simple_spell_checker package by @CatHood0 in https://github.com/singerdmx/flutter-quill/pull/2139
+
+
+**Full Changelog**: https://github.com/singerdmx/flutter-quill/compare/v10.4.2...v10.4.3
+
+## 10.4.2
+
+* Revert "fix: Double click to select text sometimes doesn't work. ([#2086](https://github.com/singerdmx/flutter-quill/pull/2086))
+
+**Full Changelog**: https://github.com/singerdmx/flutter-quill/compare/v10.4.1...v10.4.2
+
+## 10.4.1
+
+* Chore: improve Spell checker API to the example by @CatHood0 in https://github.com/singerdmx/flutter-quill/pull/2133
+
+
+**Full Changelog**: https://github.com/singerdmx/flutter-quill/compare/v10.4.0...v10.4.1
+
+## 10.4.0
+
+* Copy TapAndPanGestureRecognizer from TextField by @demoYang in https://github.com/singerdmx/flutter-quill/pull/2128
+* enhance stringToColor with a custom defined palette from `DefaultStyles` by @vishna in https://github.com/singerdmx/flutter-quill/pull/2095
+* Feat: include spell checker for example app by @CatHood0 in https://github.com/singerdmx/flutter-quill/pull/2127
+
+## New Contributors
+* @vishna made their first contribution in https://github.com/singerdmx/flutter-quill/pull/2095
+
+**Full Changelog**: https://github.com/singerdmx/flutter-quill/compare/v10.3.3...v10.4.0
+
+## 10.3.2
+
+* Fix: Loss of style when backspace by @AtlasAutocode in https://github.com/singerdmx/flutter-quill/pull/2125
+
+
+**Full Changelog**: https://github.com/singerdmx/flutter-quill/compare/v10.3.1...v10.3.2
+
+## 10.3.1
+
+* Chore: Move spellchecker service to extensions by @CatHood0 in https://github.com/singerdmx/flutter-quill/pull/2120
+
+
+**Full Changelog**: https://github.com/singerdmx/flutter-quill/compare/v10.3.0...v10.3.1
+
+## 10.3.0
+
+* Feat: Spellchecker for Flutter Quill by @CatHood0 in https://github.com/singerdmx/flutter-quill/pull/2118
+
+
+**Full Changelog**: https://github.com/singerdmx/flutter-quill/compare/v10.2.1...v10.3.0
+
+## 10.2.1
+
+* Fix: context menu is visible even when selection is collapsed by @CatHood0 in https://github.com/singerdmx/flutter-quill/pull/2116
+* Fix: unsafe operation while getting overlayEntry in text_selection by @CatHood0 in https://github.com/singerdmx/flutter-quill/pull/2117
+
+
+**Full Changelog**: https://github.com/singerdmx/flutter-quill/compare/v10.2.0...v10.2.1
+
+## 10.2.0
+
+* refactor!: restructure project into modular architecture for flutter_quill_extensions by @EchoEllet in https://github.com/singerdmx/flutter-quill/pull/2106
+* Fix: Link selection and editing by @AtlasAutocode in https://github.com/singerdmx/flutter-quill/pull/2114
+
+
+**Full Changelog**: https://github.com/singerdmx/flutter-quill/compare/v10.1.10...v10.2.0
+
+## 10.1.10
+
+* Fix(example): image_cropper outdated version by @CatHood0 in https://github.com/singerdmx/flutter-quill/pull/2100
+* Using dart.library.js_interop instead of dart.library.html by @h1376h in https://github.com/singerdmx/flutter-quill/pull/2103
+
+## New Contributors
+* @h1376h made their first contribution in https://github.com/singerdmx/flutter-quill/pull/2103
+
+**Full Changelog**: https://github.com/singerdmx/flutter-quill/compare/v10.1.9...v10.1.10
+
+## 10.1.9
+
+* restore ability to pass in key to QuillEditor by @mtallenca in https://github.com/singerdmx/flutter-quill/pull/2093
+
+
+**Full Changelog**: https://github.com/singerdmx/flutter-quill/compare/v10.1.8...v10.1.9
+
+## 10.1.8
+
+* Enhancement: Search within Embed objects by @AtlasAutocode in https://github.com/singerdmx/flutter-quill/pull/2090
+
+
+**Full Changelog**: https://github.com/singerdmx/flutter-quill/compare/v10.1.7...v10.1.8
+
+## 10.1.7
+
+* Feature/allow shortcut override by @InstrinsicAutomations in https://github.com/singerdmx/flutter-quill/pull/2089
+
+## New Contributors
+* @InstrinsicAutomations made their first contribution in https://github.com/singerdmx/flutter-quill/pull/2089
+
+**Full Changelog**: https://github.com/singerdmx/flutter-quill/compare/v10.1.6...v10.1.7
+
+## 10.1.6
+
+* fixed #1295 Double click to select text sometimes doesn't work. by @li8607 in https://github.com/singerdmx/flutter-quill/pull/2086
+
+
+**Full Changelog**: https://github.com/singerdmx/flutter-quill/compare/v10.1.5...v10.1.6
+
+## 10.1.5
+
+* ref: add `VerticalSpacing.zero` and `HorizontalSpacing.zero` named constants by @adil192 in https://github.com/singerdmx/flutter-quill/pull/2083
+
+
+**Full Changelog**: https://github.com/singerdmx/flutter-quill/compare/v10.1.4...v10.1.5
+
+## 10.1.4
+
+* Fix: collectStyles for lists and alignments by @AtlasAutocode in https://github.com/singerdmx/flutter-quill/pull/2082
+
+
+**Full Changelog**: https://github.com/singerdmx/flutter-quill/compare/v10.1.3...v10.1.4
+
+## 10.1.3
+
+* Move Controller outside of configurations data class by @AtlasAutocode in https://github.com/singerdmx/flutter-quill/pull/2078
+
+
+**Full Changelog**: https://github.com/singerdmx/flutter-quill/compare/v10.1.2...v10.1.3
+
+## 10.1.2
+
+* Fix Multiline paste with attributes and embeds by @AtlasAutocode in https://github.com/singerdmx/flutter-quill/pull/2074
+
+
+**Full Changelog**: https://github.com/singerdmx/flutter-quill/compare/v10.1.1...v10.1.2
+
+## 10.1.1
+
+* Toolbar dividers fixes + Docs updates by @troyanskiy in https://github.com/singerdmx/flutter-quill/pull/2071
+
+## New Contributors
+* @troyanskiy made their first contribution in https://github.com/singerdmx/flutter-quill/pull/2071
+
+**Full Changelog**: https://github.com/singerdmx/flutter-quill/compare/v10.1.0...v10.1.1
+
 ## 10.1.0
 
 * Feat: support for customize copy and cut Embeddables to Clipboard by @CatHood0 in https://github.com/singerdmx/flutter-quill/pull/2067

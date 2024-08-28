@@ -7,6 +7,7 @@ import 'package:flutter_quill_extensions/flutter_quill_extensions.dart'
 import 'package:share_plus/share_plus.dart' show Share;
 
 import '../../extensions/scaffold_messenger.dart';
+import '../../spell_checker/spell_checker.dart';
 import '../shared/widgets/home_screen_button.dart';
 import 'my_quill_editor.dart';
 import 'my_quill_toolbar.dart';
@@ -33,10 +34,12 @@ class QuillScreen extends StatefulWidget {
 }
 
 class _QuillScreenState extends State<QuillScreen> {
+  /// Instantiate the controller
   final _controller = QuillController.basic();
   final _editorFocusNode = FocusNode();
   final _editorScrollController = ScrollController();
   var _isReadOnly = false;
+  var _isSpellcheckerActive = false;
 
   @override
   void initState() {
@@ -55,10 +58,28 @@ class _QuillScreenState extends State<QuillScreen> {
   @override
   Widget build(BuildContext context) {
     _controller.readOnly = _isReadOnly;
+    if (!_isSpellcheckerActive) {
+      _isSpellcheckerActive = true;
+      SpellChecker.useSpellCheckerService(
+          Localizations.localeOf(context).languageCode);
+    }
     return Scaffold(
       appBar: AppBar(
         title: const Text('Flutter Quill'),
         actions: [
+          IconButton(
+            tooltip: 'Spell-checker',
+            onPressed: () {
+              SpellCheckerServiceProvider.toggleState();
+              setState(() {});
+            },
+            icon: Icon(
+              Icons.document_scanner,
+              color: SpellCheckerServiceProvider.isServiceActive()
+                  ? Colors.red.withOpacity(0.5)
+                  : null,
+            ),
+          ),
           IconButton(
             tooltip: 'Share',
             onPressed: () {
@@ -101,9 +122,12 @@ class _QuillScreenState extends State<QuillScreen> {
             builder: (context) {
               return Expanded(
                 child: MyQuillEditor(
+                  controller: _controller,
                   configurations: QuillEditorConfigurations(
+                    searchConfigurations: const QuillSearchConfigurations(
+                      searchEmbedMode: SearchEmbedMode.plainText,
+                    ),
                     sharedConfigurations: _sharedConfigurations,
-                    controller: _controller,
                   ),
                   scrollController: _editorScrollController,
                   focusNode: _editorFocusNode,

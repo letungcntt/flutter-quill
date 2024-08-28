@@ -17,7 +17,9 @@ import '../document/nodes/embeddable.dart';
 import '../document/nodes/leaf.dart';
 import '../document/structs/doc_change.dart';
 import '../document/style.dart';
+import '../editor/config/editor_configurations.dart';
 import '../editor_toolbar_controller_shared/clipboard/clipboard_service_provider.dart';
+import '../toolbar/config/simple_toolbar_configurations.dart';
 import 'quill_controller_configurations.dart';
 
 typedef ReplaceTextCallback = bool Function(int index, int len, Object? data);
@@ -39,18 +41,35 @@ class QuillController extends ChangeNotifier {
         _selection = selection;
 
   factory QuillController.basic(
-      {QuillControllerConfigurations configurations =
-          const QuillControllerConfigurations(),
-      FocusNode? editorFocusNode}) {
-    return QuillController(
-      configurations: configurations,
-      editorFocusNode: editorFocusNode,
-      document: Document(),
-      selection: const TextSelection.collapsed(offset: 0),
-    );
-  }
+          {QuillControllerConfigurations configurations =
+              const QuillControllerConfigurations(),
+          FocusNode? editorFocusNode}) =>
+      QuillController(
+        configurations: configurations,
+        editorFocusNode: editorFocusNode,
+        document: Document(),
+        selection: const TextSelection.collapsed(offset: 0),
+      );
 
   final QuillControllerConfigurations configurations;
+
+  /// Editor configurations
+  ///
+  /// Caches configuration set in QuillEditor ctor.
+  QuillEditorConfigurations? _editorConfigurations;
+  QuillEditorConfigurations get editorConfigurations =>
+      _editorConfigurations ?? const QuillEditorConfigurations();
+  set editorConfigurations(QuillEditorConfigurations? value) =>
+      _editorConfigurations = document.editorConfigurations = value;
+
+  /// Toolbar configurations
+  ///
+  /// Caches configuration set in QuillSimpleToolbar ctor.
+  QuillSimpleToolbarConfigurations? _toolbarConfigurations;
+  QuillSimpleToolbarConfigurations get toolbarConfigurations =>
+      _toolbarConfigurations ?? const QuillSimpleToolbarConfigurations();
+  set toolbarConfigurations(QuillSimpleToolbarConfigurations? value) =>
+      _toolbarConfigurations = value;
 
   /// Document managed by this controller.
   Document _document;
@@ -59,6 +78,7 @@ class QuillController extends ChangeNotifier {
 
   set document(Document doc) {
     _document = doc;
+    _document.editorConfigurations = editorConfigurations;
 
     // Prevent the selection from
     _selection = const TextSelection(baseOffset: 0, extentOffset: 0);
@@ -103,6 +123,12 @@ class QuillController extends ChangeNotifier {
   /// and that has not been applied yet.
   /// It gets reset after each format action within the [document].
   Style toggledStyle = const Style();
+
+  /// [raw_editor_actions] handling of backspace event may need to force the style displayed in the toolbar
+  void forceToggledStyle(Style style) {
+    toggledStyle = style;
+    notifyListeners();
+  }
 
   bool ignoreFocusOnTextChange = false;
 
@@ -261,13 +287,37 @@ class QuillController extends ChangeNotifier {
 
     Delta? delta;
     if (len > 0 || data is! String || data.isNotEmpty) {
-      if(len > 0 && index <= 1) {
-        final style = getSelectionStyle();
+      final styles = getAllSelectionStyles();
+      final style = document.collectStyle(selection.start, selection.end - selection.start);
 
-        if(style.isBlock || style.isInline) {
-          final attribute = style.isInline ? Attribute.inlineCode : Attribute.codeBlock;
-          formatSelection(Attribute.clone(attribute, null));
-          
+      final isInlineToggle = toggledStyle.attributes.values.any((e) {
+        final inline = e.key == 'code' && e.value == true;
+        return inline;
+      });
+
+      if(style.isEmpty) {
+        if(isInlineToggle) {
+          formatSelection(Attribute.clone(Attribute.inlineCode, null));
+        } else {
+          final hasStyle = toggledStyle.attributes.values.any((e) {
+            return ['command', 'mention'].contains(e.key);
+          });
+
+          if(hasStyle) {
+            formatSelection(Attribute.clone(toggledStyle.attributes.values.first, null));
+          }
+        }
+      }
+
+      if(len > 0) {
+        final isInline = styles.any((style) {
+          return style.attributes.values.any((e) {
+            return e.key == 'code' && e.value == true;
+          });
+        });
+
+        if(isInline) {
+          formatSelection(Attribute.clone(Attribute.inlineCode, null));
         }
       }
 
@@ -342,8 +392,9 @@ class QuillController extends ChangeNotifier {
     Attribute? attribute, {
     bool shouldNotifyListeners = true,
   }) {
-    if (len == 0 &&
-        attribute!.isInline &&
+    if (
+      attribute!.isInline &&
+      (len == 0 || index == 0) &&
         attribute.key != Attribute.link.key) {
       // Add the attribute to our toggledStyle.
       // It will be used later upon insertion.
@@ -481,10 +532,13 @@ class QuillController extends ChangeNotifier {
 
   /// Clipboard caches last copy to allow paste with styles. Static to allow paste between multiple instances of editor.
   static String _pastePlainText = '';
+  static Delta _pasteDelta = Delta();
   static List<OffsetValue> _pasteStyleAndEmbed = <OffsetValue>[];
 
   String get pastePlainText => _pastePlainText;
+  Delta get pasteDelta => _pasteDelta;
   List<OffsetValue> get pasteStyleAndEmbed => _pasteStyleAndEmbed;
+
   bool readOnly;
 
   /// Used to give focus to the editor following a toolbar action
@@ -500,8 +554,16 @@ class QuillController extends ChangeNotifier {
 
   bool clipboardSelection(bool copy) {
     copiedImageUrl = null;
-    _pastePlainText = getPlainText();
+
+    /// Get the text for the selected region and expand the content of Embedded objects.
+    _pastePlainText = document.getPlainText(
+        selection.start, selection.end - selection.start, true);
+
+    /// Get the internal representation so it can be pasted into a QuillEditor with style retained.
     _pasteStyleAndEmbed = getAllIndividualSelectionStylesAndEmbed();
+
+    /// Get the deltas for the selection so they can be pasted into a QuillEditor with styles and embeds retained.
+    _pasteDelta = document.toDelta().slice(selection.start, selection.end);
 
     if (!selection.isCollapsed) {
       Clipboard.setData(ClipboardData(text: _pastePlainText));
@@ -543,28 +605,7 @@ class QuillController extends ChangeNotifier {
     // See https://github.com/flutter/flutter/issues/11427
     final plainTextClipboardData =
         await Clipboard.getData(Clipboard.kTextPlain);
-    if (plainTextClipboardData != null) {
-      final lines = plainTextClipboardData.text!.split('\n');
-      for (var i = 0; i < lines.length; ++i) {
-        final line = lines[i];
-        if (line.isNotEmpty) {
-          replaceTextWithEmbeds(
-            selection.start,
-            selection.end - selection.start,
-            line,
-            TextSelection.collapsed(offset: selection.start + line.length),
-          );
-        }
-        if (i != lines.length - 1) {
-          document.insert(selection.extentOffset, '\n');
-          _updateSelection(
-            TextSelection.collapsed(
-              offset: selection.extentOffset + 1,
-            ),
-            insertNewline: true,
-          );
-        }
-      }
+    if (pasteUsingPlainOrDelta(plainTextClipboardData?.text)) {
       updateEditor?.call();
       return true;
     }
@@ -574,6 +615,28 @@ class QuillController extends ChangeNotifier {
       return true;
     }
 
+    return false;
+  }
+
+  /// Internal method to allow unit testing
+  bool pasteUsingPlainOrDelta(String? clipboardText) {
+    if (clipboardText != null) {
+      /// Internal copy-paste preserves styles and embeds
+      if (clipboardText == _pastePlainText &&
+          _pastePlainText.isNotEmpty &&
+          _pasteDelta.isNotEmpty) {
+        replaceText(selection.start, selection.end - selection.start,
+            _pasteDelta, TextSelection.collapsed(offset: selection.end));
+      } else {
+        replaceText(
+            selection.start,
+            selection.end - selection.start,
+            clipboardText,
+            TextSelection.collapsed(
+                offset: selection.end + clipboardText.length));
+      }
+      return true;
+    }
     return false;
   }
 

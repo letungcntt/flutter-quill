@@ -13,7 +13,6 @@ import 'package:flutter/services.dart'
         Clipboard,
         HardwareKeyboard,
         KeyDownEvent,
-        LogicalKeyboardKey,
         SystemChannels,
         TextInputControl;
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart'
@@ -29,7 +28,6 @@ import '../../document/attribute.dart';
 import '../../document/document.dart';
 import '../../document/nodes/block.dart';
 import '../../document/nodes/embeddable.dart';
-import '../../document/nodes/leaf.dart' as leaf;
 import '../../document/nodes/line.dart';
 import '../../document/nodes/node.dart';
 import '../../editor_toolbar_controller_shared/clipboard/clipboard_service_provider.dart';
@@ -42,7 +40,6 @@ import '../widgets/proxy.dart';
 import '../widgets/text/text_block.dart';
 import '../widgets/text/text_line.dart';
 import '../widgets/text/text_selection.dart';
-import 'quill_single_child_scroll_view.dart';
 import 'raw_editor.dart';
 import 'raw_editor_actions.dart';
 import 'raw_editor_render_object.dart';
@@ -76,7 +73,7 @@ class QuillRawEditorState extends EditorState
   // Cursors
   late CursorCont _cursorCont;
 
-  QuillController get controller => widget.configurations.controller;
+  QuillController get controller => widget.controller;
 
   // Focus
   bool _didAutoFocus = false;
@@ -225,7 +222,7 @@ class QuillRawEditorState extends EditorState
       onCut:
           cutEnabled ? () => cutSelection(SelectionChangedCause.toolbar) : null,
       onPaste:
-          pasteEnabled ? () => pasteText(SelectionChangedCause.toolbar) : null,
+          pasteEnabled && _clipboardStatus?.value == ClipboardStatus.pasteable ? () => pasteText(SelectionChangedCause.toolbar) : null,
       onSelectAll: selectAllEnabled
           ? () => selectAll(SelectionChangedCause.toolbar)
           : null,
@@ -438,35 +435,31 @@ class QuillRawEditorState extends EditorState
         textStyle: _styles!.paragraph!.style,
         padding: baselinePadding,
         child: _scribbleFocusable(
-          QuillSingleChildScrollView(
+          SingleChildScrollView(
             controller: _scrollController,
             physics: widget.configurations.scrollPhysics,
-            viewportBuilder: (_, offset) => CompositedTransformTarget(
-              link: _toolbarLayerLink,
-              child: MouseRegion(
-                cursor: widget.configurations.readOnly
-                    ? widget.configurations.readOnlyMouseCursor
-                    : SystemMouseCursors.text,
-                child: QuillRawEditorMultiChildRenderObject(
-                  key: _editorKey,
-                  offset: offset,
-                  document: doc,
-                  selection: controller.selection,
-                  hasFocus: _hasFocus,
-                  scrollable: widget.configurations.scrollable,
-                  textDirection: _textDirection,
-                  startHandleLayerLink: _startHandleLayerLink,
-                  endHandleLayerLink: _endHandleLayerLink,
-                  onSelectionChanged: _handleSelectionChanged,
-                  onSelectionCompleted: _handleSelectionCompleted,
-                  scrollBottomInset: widget.configurations.scrollBottomInset,
-                  padding: widget.configurations.padding,
-                  maxContentWidth: widget.configurations.maxContentWidth,
-                  cursorController: _cursorCont,
-                  floatingCursorDisabled:
-                      widget.configurations.floatingCursorDisabled,
-                  children: _buildChildren(doc, context),
-                ),
+            child: MouseRegion(
+              cursor: widget.configurations.readOnly
+                  ? widget.configurations.readOnlyMouseCursor
+                  : SystemMouseCursors.text,
+              child: QuillRawEditorMultiChildRenderObject(
+                key: _editorKey,
+                document: doc,
+                selection: controller.selection,
+                hasFocus: _hasFocus,
+                scrollable: widget.configurations.scrollable,
+                textDirection: _textDirection,
+                startHandleLayerLink: _startHandleLayerLink,
+                endHandleLayerLink: _endHandleLayerLink,
+                onSelectionChanged: _handleSelectionChanged,
+                onSelectionCompleted: _handleSelectionCompleted,
+                scrollBottomInset: widget.configurations.scrollBottomInset,
+                padding: widget.configurations.padding,
+                maxContentWidth: widget.configurations.maxContentWidth,
+                cursorController: _cursorCont,
+                floatingCursorDisabled:
+                    widget.configurations.floatingCursorDisabled,
+                children: _buildChildren(doc, context),
               ),
             ),
           ),
@@ -531,151 +524,13 @@ class QuillRawEditorState extends EditorState
       child: QuillStyles(
         data: _styles!,
         child: Shortcuts(
-          shortcuts: mergeMaps<ShortcutActivator, Intent>({
-            // shortcuts added for Desktop platforms.
-            // const SingleActivator(
-            //   LogicalKeyboardKey.escape,
-            // ): const HideSelectionToolbarIntent(),
-            // SingleActivator(
-            //   LogicalKeyboardKey.keyZ,
-            //   control: !isDesktopMacOS,
-            //   meta: isDesktopMacOS,
-            // ): const UndoTextIntent(SelectionChangedCause.keyboard),
-            // SingleActivator(
-            //   LogicalKeyboardKey.keyY,
-            //   control: !isDesktopMacOS,
-            //   meta: isDesktopMacOS,
-            // ): const RedoTextIntent(SelectionChangedCause.keyboard),
-
-            // // Selection formatting.
-            // SingleActivator(
-            //   LogicalKeyboardKey.keyB,
-            //   control: !isDesktopMacOS,
-            //   meta: isDesktopMacOS,
-            // ): const ToggleTextStyleIntent(Attribute.bold),
-            // SingleActivator(
-            //   LogicalKeyboardKey.keyU,
-            //   control: !isDesktopMacOS,
-            //   meta: isDesktopMacOS,
-            // ): const ToggleTextStyleIntent(Attribute.underline),
-            // SingleActivator(
-            //   LogicalKeyboardKey.keyI,
-            //   control: !isDesktopMacOS,
-            //   meta: isDesktopMacOS,
-            // ): const ToggleTextStyleIntent(Attribute.italic),
-            // SingleActivator(
-            //   LogicalKeyboardKey.keyS,
-            //   control: !isDesktopMacOS,
-            //   meta: isDesktopMacOS,
-            //   shift: true,
-            // ): const ToggleTextStyleIntent(Attribute.strikeThrough),
-            // SingleActivator(
-            //   LogicalKeyboardKey.backquote,
-            //   control: !isDesktopMacOS,
-            //   meta: isDesktopMacOS,
-            // ): const ToggleTextStyleIntent(Attribute.inlineCode),
-            // SingleActivator(
-            //   LogicalKeyboardKey.tilde,
-            //   control: !isDesktopMacOS,
-            //   meta: isDesktopMacOS,
-            //   shift: true,
-            // ): const ToggleTextStyleIntent(Attribute.codeBlock),
-            // SingleActivator(
-            //   LogicalKeyboardKey.keyB,
-            //   control: !isDesktopMacOS,
-            //   meta: isDesktopMacOS,
-            //   shift: true,
-            // ): const ToggleTextStyleIntent(Attribute.blockQuote),
-            // SingleActivator(
-            //   LogicalKeyboardKey.keyK,
-            //   control: !isDesktopMacOS,
-            //   meta: isDesktopMacOS,
-            // ): const QuillEditorApplyLinkIntent(),
-
-            // // Lists
-            // SingleActivator(
-            //   LogicalKeyboardKey.keyL,
-            //   control: !isDesktopMacOS,
-            //   meta: isDesktopMacOS,
-            //   shift: true,
-            // ): const ToggleTextStyleIntent(Attribute.ul),
-            // SingleActivator(
-            //   LogicalKeyboardKey.keyO,
-            //   control: !isDesktopMacOS,
-            //   meta: isDesktopMacOS,
-            //   shift: true,
-            // ): const ToggleTextStyleIntent(Attribute.ol),
-            // SingleActivator(
-            //   LogicalKeyboardKey.keyC,
-            //   control: !isDesktopMacOS,
-            //   meta: isDesktopMacOS,
-            //   shift: true,
-            // ): const QuillEditorApplyCheckListIntent(),
-
-            // // Indents
-            // SingleActivator(
-            //   LogicalKeyboardKey.keyM,
-            //   control: !isDesktopMacOS,
-            //   meta: isDesktopMacOS,
-            // ): const IndentSelectionIntent(true),
-            // SingleActivator(
-            //   LogicalKeyboardKey.keyM,
-            //   control: !isDesktopMacOS,
-            //   meta: isDesktopMacOS,
-            //   shift: true,
-            // ): const IndentSelectionIntent(false),
-
-            // // Headers
-            // SingleActivator(
-            //   LogicalKeyboardKey.digit1,
-            //   control: !isDesktopMacOS,
-            //   meta: isDesktopMacOS,
-            // ): const QuillEditorApplyHeaderIntent(Attribute.h1),
-            // SingleActivator(
-            //   LogicalKeyboardKey.digit2,
-            //   control: !isDesktopMacOS,
-            //   meta: isDesktopMacOS,
-            // ): const QuillEditorApplyHeaderIntent(Attribute.h2),
-            // SingleActivator(
-            //   LogicalKeyboardKey.digit3,
-            //   control: !isDesktopMacOS,
-            //   meta: isDesktopMacOS,
-            // ): const QuillEditorApplyHeaderIntent(Attribute.h3),
-            // SingleActivator(
-            //   LogicalKeyboardKey.digit4,
-            //   control: !isDesktopMacOS,
-            //   meta: isDesktopMacOS,
-            // ): const QuillEditorApplyHeaderIntent(Attribute.h4),
-            // SingleActivator(
-            //   LogicalKeyboardKey.digit5,
-            //   control: !isDesktopMacOS,
-            //   meta: isDesktopMacOS,
-            // ): const QuillEditorApplyHeaderIntent(Attribute.h5),
-            // SingleActivator(
-            //   LogicalKeyboardKey.digit6,
-            //   control: !isDesktopMacOS,
-            //   meta: isDesktopMacOS,
-            // ): const QuillEditorApplyHeaderIntent(Attribute.h6),
-            // SingleActivator(
-            //   LogicalKeyboardKey.digit0,
-            //   control: !isDesktopMacOS,
-            //   meta: isDesktopMacOS,
-            // ): const QuillEditorApplyHeaderIntent(Attribute.header),
-
-            // SingleActivator(
-            //   LogicalKeyboardKey.keyG,
-            //   control: !isDesktopMacOS,
-            //   meta: isDesktopMacOS,
-            // ): const QuillEditorInsertEmbedIntent(Attribute.image),
-
-            // SingleActivator(
-            //   LogicalKeyboardKey.keyF,
-            //   control: !isDesktopMacOS,
-            //   meta: isDesktopMacOS,
-            // ): const OpenSearchIntent(),
-          }, {
-            ...?widget.configurations.customShortcuts
-          }),
+          /// Merge with widget.configurations.customShortcuts
+          /// first to allow user's defined shortcuts to take
+          /// priority when activation triggers are the same
+          shortcuts: mergeMaps<ShortcutActivator, Intent>(
+            {...?widget.configurations.customShortcuts},
+            {},
+          ),
           child: Actions(
             actions: mergeMaps<Type, Action<Intent>>(_actions, {
               ...?widget.configurations.customActions,
@@ -708,9 +563,9 @@ class QuillRawEditorState extends EditorState
       return KeyEventResult.ignored;
     }
     // Handle indenting blocks when pressing the tab key.
-    if (event.logicalKey == LogicalKeyboardKey.tab) {
-      return _handleTabKey(event);
-    }
+    // if (event.logicalKey == LogicalKeyboardKey.tab) {
+    //   return _handleTabKey(event);
+    // }
 
     // Don't handle key if there is an active selection.
     if (controller.selection.baseOffset != controller.selection.extentOffset) {
@@ -718,76 +573,6 @@ class QuillRawEditorState extends EditorState
     }
 
     return KeyEventResult.ignored;
-  }
-
-  KeyEventResult _handleTabKey(KeyEvent event) {
-    final child =
-        controller.document.queryChild(controller.selection.baseOffset);
-
-    KeyEventResult insertTabCharacter() {
-      if (widget.configurations.readOnly) {
-        return KeyEventResult.ignored;
-      }
-      controller.replaceText(controller.selection.baseOffset, 0, '\t', null);
-      _moveCursor(1);
-      return KeyEventResult.handled;
-    }
-
-    if (controller.selection.baseOffset != controller.selection.extentOffset) {
-      if (child.node == null || child.node!.parent == null) {
-        return KeyEventResult.handled;
-      }
-      final parentBlock = child.node!.parent!;
-      if (parentBlock.style.containsKey(Attribute.ol.key) ||
-          parentBlock.style.containsKey(Attribute.ul.key) ||
-          parentBlock.style.containsKey(Attribute.checked.key)) {
-        controller.indentSelection(!HardwareKeyboard.instance.isShiftPressed);
-      }
-      return KeyEventResult.handled;
-    }
-
-    if (child.node == null) {
-      return insertTabCharacter();
-    }
-
-    final node = child.node!;
-
-    final parent = node.parent;
-    if (parent == null || parent is! Block) {
-      return insertTabCharacter();
-    }
-
-    if (node is! Line || (node.isNotEmpty && node.first is! leaf.QuillText)) {
-      return insertTabCharacter();
-    }
-
-    final parentBlock = parent;
-    if (parentBlock.style.containsKey(Attribute.ol.key) ||
-        parentBlock.style.containsKey(Attribute.ul.key) ||
-        parentBlock.style.containsKey(Attribute.checked.key)) {
-      if (node.isNotEmpty &&
-          (node.first as leaf.QuillText).value.isNotEmpty &&
-          controller.selection.base.offset > node.documentOffset) {
-        return insertTabCharacter();
-      }
-      controller.indentSelection(!HardwareKeyboard.instance.isShiftPressed);
-      return KeyEventResult.handled;
-    }
-
-    if (node.isNotEmpty && (node.first as leaf.QuillText).value.isNotEmpty) {
-      return insertTabCharacter();
-    }
-
-    return insertTabCharacter();
-  }
-
-  void _moveCursor(int chars) {
-    final selection = controller.selection;
-    controller.updateSelection(
-        controller.selection.copyWith(
-            baseOffset: selection.baseOffset + chars,
-            extentOffset: selection.baseOffset + chars),
-        ChangeSource.local);
   }
 
   void _handleSelectionChanged(
@@ -805,7 +590,7 @@ class QuillRawEditorState extends EditorState
     _selectionOverlay?.handlesVisible = _shouldShowSelectionHandles();
     _selectionOverlay?.showHandles();
 
-    if (!_keyboardVisible) {
+    if (!_hasFocus) {
       // This will show the keyboard for all selection changes on the
       // editor, not just changes triggered by user gestures.
       requestKeyboard();
@@ -879,15 +664,7 @@ class QuillRawEditorState extends EditorState
       }
 
       prevNodeOl = attrs[Attribute.list.key] == Attribute.ol;
-      var nodeTextDirection = getDirectionOfNode(node);
-      // verify if the direction from nodeTextDirection is the default direction
-      // and watch if the system language is a RTL language and avoid putting
-      // to the edge of the left side any checkbox or list point/number if is a
-      // RTL language
-      if (nodeTextDirection == TextDirection.ltr &&
-          _textDirection == TextDirection.rtl) {
-        nodeTextDirection = TextDirection.rtl;
-      }
+      final nodeTextDirection = getDirectionOfNode(node, _textDirection);
       if (node is Line) {
         final editableTextLine = _getEditableTextLineFromNode(node, context);
         result.add(Directionality(
@@ -918,6 +695,8 @@ class QuillRawEditorState extends EditorState
           onCheckboxTap: _handleCheckboxTap,
           readOnly: widget.configurations.readOnly,
           checkBoxReadOnly: widget.configurations.checkBoxReadOnly,
+          customRecognizerBuilder:
+              widget.configurations.customRecognizerBuilder,
           customStyleBuilder: widget.configurations.customStyleBuilder,
           customLinkPrefixes: widget.configurations.customLinkPrefixes,
         );
@@ -1049,7 +828,7 @@ class QuillRawEditorState extends EditorState
     } else if (attrs.containsKey(Attribute.align.key)) {
       return defaultStyles!.align!.horizontalSpacing;
     }
-    return const HorizontalSpacing(0, 0);
+    return HorizontalSpacing.zero;
   }
 
   VerticalSpacing _getVerticalSpacingForBlock(
@@ -1066,7 +845,7 @@ class QuillRawEditorState extends EditorState
     } else if (attrs.containsKey(Attribute.align.key)) {
       return defaultStyles!.align!.verticalSpacing;
     }
-    return const VerticalSpacing(0, 0);
+    return VerticalSpacing.zero;
   }
 
   void _didChangeTextEditingValueListener() {
@@ -1178,9 +957,8 @@ class QuillRawEditorState extends EditorState
     _cursorCont.show.value = widget.configurations.showCursor;
     _cursorCont.style = widget.configurations.cursorStyle;
 
-    if (controller != oldWidget.configurations.controller) {
-      oldWidget.configurations.controller
-          .removeListener(_didChangeTextEditingValue);
+    if (controller != oldWidget.controller) {
+      oldWidget.controller.removeListener(_didChangeTextEditingValue);
       controller.addListener(_didChangeTextEditingValue);
       updateRemoteValueIfNeeded();
     }
@@ -1197,7 +975,7 @@ class QuillRawEditorState extends EditorState
       updateKeepAlive();
     }
 
-    if (controller.selection != oldWidget.configurations.controller.selection) {
+    if (controller.selection != oldWidget.controller.selection) {
       _selectionOverlay?.update(textEditingValue);
     }
 
@@ -1252,7 +1030,7 @@ class QuillRawEditorState extends EditorState
   /// operating on stale data.
   void _markNeedsBuild() {
     if (_dirty) {
-      // No need to rebuilt if it already darty
+      // No need to rebuilt if it already dirty
       return;
     }
     setState(() {
@@ -1321,6 +1099,9 @@ class QuillRawEditorState extends EditorState
     if (_selectionOverlay != null) {
       if (_hasFocus) {
         _selectionOverlay!.update(textEditingValue);
+      } else {
+        _selectionOverlay!.dispose();
+        _selectionOverlay = null;
       }
     } else if (_hasFocus) {
       _selectionOverlay = _createSelectionOverlay();
@@ -1498,6 +1279,16 @@ class QuillRawEditorState extends EditorState
     return true;
   }
 
+  @override
+  void toggleToolbar([bool hideHandles = true]) {
+    final selectionOverlay = _selectionOverlay ??= _createSelectionOverlay();
+    if (selectionOverlay.handlesVisible) {
+      hideToolbar(hideHandles);
+    } else {
+      showToolbar();
+    }
+  }
+
   void _replaceText(ReplaceTextIntent intent) {
     userUpdateTextEditingValue(
       intent.currentTextEditingValue
@@ -1530,7 +1321,7 @@ class QuillRawEditorState extends EditorState
     final QuillEditorTextBoundary boundary;
 
     // final TextEditingValue textEditingValue =
-    //     _textEditingValueforTextLayoutMetrics;
+    //     _textEditingValueForTextLayoutMetrics;
     atomicTextBoundary = QuillEditorCharacterBoundary(textEditingValue);
     // This isn't enough. Newline characters.
     boundary = QuillEditorExpandedTextBoundary(
@@ -1678,7 +1469,6 @@ class QuillRawEditorState extends EditorState
     QuillEditorApplyHeaderIntent: _applyHeaderAction,
     QuillEditorApplyCheckListIntent: _applyCheckListAction,
     QuillEditorApplyLinkIntent: QuillEditorApplyLinkAction(this),
-    ScrollToDocumentBoundaryIntent: NavigateToDocumentBoundaryAction(this),
 
     //  Paging and scrolling
     ExtendSelectionVerticallyToAdjacentPageIntent: _adjacentPageAction,
@@ -1772,15 +1562,19 @@ class QuillRawEditorState extends EditorState
 
   @override
   void showMagnifier(ui.Offset positionToShow) {
+    if (_hasFocus == false) return;
     if (_selectionOverlay == null) return;
     final position = renderEditor.getPositionForOffset(positionToShow);
-    _selectionOverlay?.showMagnifier(position, positionToShow, renderEditor);
+    if (_selectionOverlay!.magnifierIsVisible) {
+      _selectionOverlay!
+          .updateMagnifier(position, positionToShow, renderEditor);
+    } else {
+      _selectionOverlay!.showMagnifier(position, positionToShow, renderEditor);
+    }
   }
 
   @override
   void updateMagnifier(ui.Offset positionToShow) {
-    _updateOrDisposeSelectionOverlayIfNeeded();
-    final position = renderEditor.getPositionForOffset(positionToShow);
-    _selectionOverlay?.updateMagnifier(position, positionToShow, renderEditor);
+    showMagnifier(positionToShow);
   }
 }

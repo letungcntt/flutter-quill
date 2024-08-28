@@ -77,6 +77,7 @@ class EditableTextBlock extends StatelessWidget {
     required this.clearIndents,
     required this.onCheckboxTap,
     required this.readOnly,
+    required this.customRecognizerBuilder,
     this.checkBoxReadOnly,
     this.onLaunchUrl,
     this.customStyleBuilder,
@@ -99,6 +100,7 @@ class EditableTextBlock extends StatelessWidget {
   final EmbedsBuilder embedBuilder;
   final LinkActionPicker linkActionPicker;
   final ValueChanged<String>? onLaunchUrl;
+  final CustomRecognizerBuilder? customRecognizerBuilder;
   final CustomStyleBuilder? customStyleBuilder;
   final CursorCont cursorCont;
   final Map<int, int> indentLevelCounts;
@@ -183,6 +185,7 @@ class EditableTextBlock extends StatelessWidget {
           linkActionPicker: linkActionPicker,
           onLaunchUrl: onLaunchUrl,
           customLinkPrefixes: customLinkPrefixes,
+          customRecognizerBuilder: customRecognizerBuilder,
         ),
         _getIndentWidth(context, count),
         _getSpacingForLine(line, index, count, defaultStyles),
@@ -194,15 +197,7 @@ class EditableTextBlock extends StatelessWidget {
         MediaQuery.devicePixelRatioOf(context),
         cursorCont,
       );
-      var nodeTextDirection = getDirectionOfNode(line);
-      // verify if the direction from nodeTextDirection is the default direction
-      // and watch if the system language is a RTL language and avoid putting
-      // to the edge of the left side any checkbox or list point/number if is a
-      // RTL language
-      if (nodeTextDirection == TextDirection.ltr &&
-          textDirection == TextDirection.rtl) {
-        nodeTextDirection = TextDirection.rtl;
-      }
+      final nodeTextDirection = getDirectionOfNode(line, textDirection);
       children.add(
         Directionality(
           textDirection: nodeTextDirection,

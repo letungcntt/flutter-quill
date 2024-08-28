@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart' show Brightness, Uint8List, immutable;
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart'
     show TextCapitalization, TextInputAction, TextSelectionThemeData;
 import 'package:flutter/widgets.dart';
@@ -15,6 +16,7 @@ import '../widgets/default_styles.dart';
 import '../widgets/delegate.dart';
 import '../widgets/link.dart';
 import 'element_options.dart';
+import 'search_configurations.dart';
 
 export 'element_options.dart';
 
@@ -24,7 +26,9 @@ class QuillEditorConfigurations extends Equatable {
   /// Important note for the maintainers
   /// When editing this class please update the [copyWith] function too.
   const QuillEditorConfigurations({
-    required this.controller,
+    @Deprecated(
+        'controller should be passed directly to the editor - this parameter will be removed in future versions.')
+    this.controller,
     this.sharedConfigurations = const QuillSharedConfigurations(),
     this.scrollable = true,
     this.padding = EdgeInsets.zero,
@@ -56,6 +60,7 @@ class QuillEditorConfigurations extends Equatable {
     this.enableMarkdownStyleConversion = true,
     this.embedBuilders,
     this.unknownEmbedBuilder,
+    this.searchConfigurations = const QuillSearchConfigurations(),
     this.linkActionPickerDelegate = defaultLinkActionPickerDelegate,
     this.customStyleBuilder,
     this.customRecognizerBuilder,
@@ -87,7 +92,8 @@ class QuillEditorConfigurations extends Equatable {
 
   final QuillSharedConfigurations sharedConfigurations;
 
-  final QuillController controller;
+  @Deprecated('controller will be removed in future versions.')
+  final QuillController? controller;
 
   /// The text placeholder in the quill editor
   final String? placeholder;
@@ -98,7 +104,8 @@ class QuillEditorConfigurations extends Equatable {
   /// by any shortcut or keyboard operation. The text is still selectable.
   ///
   /// Defaults to `false`. Must not be `null`.
-  bool get readOnly => controller.readOnly;
+  // ignore: deprecated_member_use_from_same_package
+  bool get readOnly => controller?.readOnly != false;
 
   /// Override [readOnly] for checkbox.
   ///
@@ -253,11 +260,12 @@ class QuillEditorConfigurations extends Equatable {
 
   // Returns whether gesture is handled
   final bool Function(
-      TapDownDetails details, TextPosition Function(Offset offset))? onTapDown;
+          TapDragDownDetails details, TextPosition Function(Offset offset))?
+      onTapDown;
 
   // Returns whether gesture is handled
   final bool Function(
-      TapUpDetails details, TextPosition Function(Offset offset))? onTapUp;
+      TapDragUpDetails details, TextPosition Function(Offset offset))? onTapUp;
 
   // Returns whether gesture is handled
   final bool Function(
@@ -277,6 +285,8 @@ class QuillEditorConfigurations extends Equatable {
   final EmbedBuilder? unknownEmbedBuilder;
   final CustomStyleBuilder? customStyleBuilder;
   final CustomRecognizerBuilder? customRecognizerBuilder;
+
+  final QuillSearchConfigurations searchConfigurations;
 
   /// Delegate function responsible for showing menu with link actions on
   /// mobile platforms (iOS, Android).
@@ -385,7 +395,8 @@ class QuillEditorConfigurations extends Equatable {
   @override
   List<Object?> get props => [
         placeholder,
-        controller.readOnly,
+        // ignore: deprecated_member_use_from_same_package
+        controller?.readOnly,
       ];
 
   // We might use code generator like freezed but sometimes it can be limited
@@ -421,6 +432,7 @@ class QuillEditorConfigurations extends Equatable {
     ValueChanged<String>? onLaunchUrl,
     Iterable<EmbedBuilder>? embedBuilders,
     EmbedBuilder? unknownEmbedBuilder,
+    QuillSearchConfigurations? searchConfigurations,
     CustomStyleBuilder? customStyleBuilder,
     CustomRecognizerBuilder? customRecognizerBuilder,
     LinkActionPickerDelegate? linkActionPickerDelegate,
@@ -450,6 +462,7 @@ class QuillEditorConfigurations extends Equatable {
   }) {
     return QuillEditorConfigurations(
       sharedConfigurations: sharedConfigurations ?? this.sharedConfigurations,
+      // ignore: deprecated_member_use_from_same_package
       controller: controller ?? this.controller,
       placeholder: placeholder ?? this.placeholder,
       checkBoxReadOnly: checkBoxReadOnly ?? this.checkBoxReadOnly,
@@ -480,6 +493,7 @@ class QuillEditorConfigurations extends Equatable {
       onLaunchUrl: onLaunchUrl ?? this.onLaunchUrl,
       embedBuilders: embedBuilders ?? this.embedBuilders,
       unknownEmbedBuilder: unknownEmbedBuilder ?? this.unknownEmbedBuilder,
+      searchConfigurations: searchConfigurations ?? this.searchConfigurations,
       customStyleBuilder: customStyleBuilder ?? this.customStyleBuilder,
       customRecognizerBuilder:
           customRecognizerBuilder ?? this.customRecognizerBuilder,

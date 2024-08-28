@@ -31,16 +31,16 @@ class MyQuillToolbar extends StatelessWidget {
   ) async {
     final croppedFile = await ImageCropper().cropImage(
       sourcePath: image,
-      aspectRatioPresets: [
-        CropAspectRatioPreset.square,
-        CropAspectRatioPreset.ratio3x2,
-        CropAspectRatioPreset.original,
-        CropAspectRatioPreset.ratio4x3,
-        CropAspectRatioPreset.ratio16x9
-      ],
       uiSettings: [
         AndroidUiSettings(
           toolbarTitle: 'Cropper',
+          aspectRatioPresets: [
+            CropAspectRatioPreset.square,
+            CropAspectRatioPreset.ratio3x2,
+            CropAspectRatioPreset.original,
+            CropAspectRatioPreset.ratio4x3,
+            CropAspectRatioPreset.ratio16x9
+          ],
           toolbarColor: Colors.deepOrange,
           toolbarWidgetColor: Colors.white,
           initAspectRatio: CropAspectRatioPreset.original,
@@ -48,6 +48,13 @@ class MyQuillToolbar extends StatelessWidget {
         ),
         IOSUiSettings(
           title: 'Cropper',
+          aspectRatioPresets: [
+            CropAspectRatioPreset.square,
+            CropAspectRatioPreset.ratio3x2,
+            CropAspectRatioPreset.original,
+            CropAspectRatioPreset.ratio4x3,
+            CropAspectRatioPreset.ratio16x9
+          ],
         ),
         WebUiSettings(
           context: context,
@@ -203,8 +210,12 @@ class MyQuillToolbar extends StatelessWidget {
           );
         }
         return QuillToolbar.simple(
+          controller: controller,
+
+          /// configurations parameter:
+          ///   Optional: if not provided will use the configuration set when the controller was instantiated.
+          ///   Override: Provide parameter here to override the default configuration - useful if configuration will change.
           configurations: QuillSimpleToolbarConfigurations(
-            controller: controller,
             showAlignmentButtons: true,
             multiRowsDisplay: true,
             fontFamilyValues: {

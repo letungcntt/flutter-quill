@@ -4,12 +4,19 @@ import 'package:flutter/cupertino.dart'
     show CupertinoTheme, cupertinoTextSelectionControls;
 import 'package:flutter/foundation.dart'
     show ValueListenable, defaultTargetPlatform;
-import 'package:flutter/gestures.dart' show PointerDeviceKind;
+import 'package:flutter/gestures.dart'
+    show
+        PointerDeviceKind,
+        TapDragDownDetails,
+        TapDragEndDetails,
+        TapDragStartDetails,
+        TapDragUpDetails;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
 import '../common/utils/platform.dart';
+import '../controller/quill_controller.dart';
 import '../document/attribute.dart';
 import '../document/document.dart';
 import '../document/nodes/container.dart' as container_node;
@@ -120,36 +127,83 @@ abstract class RenderAbstractEditor implements TextLayoutMetrics {
 }
 
 class QuillEditor extends StatefulWidget {
-  const QuillEditor({
-    required this.configurations,
-    required this.focusNode,
-    required this.scrollController,
-    super.key,
-  });
+  /// Quick start guide:
+  ///
+  /// Instantiate a controller:
+  /// QuillController _controller = QuillController.basic();
+  ///
+  /// Connect the controller to the `QuillEditor` and `QuillSimpleToolbar` widgets.
+  /// QuillSimpleToolbar(
+  ///   controller: _controller,
+  ///   configurations: const QuillSimpleToolbarConfigurations(),
+  /// ),
+  /// Expanded(
+  ///   child: QuillEditor.basic(
+  ///     controller: _controller,
+  ///     configurations: const QuillEditorConfigurations(),
+  ///   ),
+  /// ),
+  ///
+  factory QuillEditor({
+    required FocusNode focusNode,
+    required ScrollController scrollController,
+    Key? key,
+
+    /// Controller and configurations are required
+    ///
+    /// Prefer: use controller and pass QuillEditorConfigurations in constructor for controller (using QuillControllerConfigurations).
+    /// Backward compatibility: use configurations and pass QuillController in constructor for configurations. (Will be removed in future versions.)
+    QuillController? controller,
+    QuillEditorConfigurations? configurations,
+  }) {
+    // ignore: deprecated_member_use_from_same_package
+    controller ??= configurations?.controller;
+    assert(controller != null,
+        'controller required. Provide controller directly (preferred) or indirectly through configurations (not recommended - will be removed in future versions).');
+    controller ??= QuillController(
+        document: Document(),
+        selection: const TextSelection.collapsed(offset: 0));
+    //
+    controller
+      ..editorConfigurations = configurations
+      ..editorFocusNode = focusNode;
+    //
+    return QuillEditor._(
+        focusNode: focusNode,
+        scrollController: scrollController,
+        controller: controller,
+        key: key);
+  }
+
+  const QuillEditor._(
+      {required this.focusNode,
+      required this.scrollController,
+      required this.controller,
+      super.key});
 
   factory QuillEditor.basic({
+    /// The controller for the quill editor widget of flutter quill
+    QuillController? controller,
+
     /// The configurations for the quill editor widget of flutter quill
-    required QuillEditorConfigurations configurations,
+    QuillEditorConfigurations? configurations,
     FocusNode? focusNode,
     ScrollController? scrollController,
   }) {
     return QuillEditor(
       scrollController: scrollController ?? ScrollController(),
       focusNode: focusNode ?? FocusNode(),
-      configurations: configurations.copyWith(
-        textSelectionThemeData: configurations.textSelectionThemeData,
-        autoFocus: configurations.autoFocus,
-        expands: configurations.expands,
-        padding: configurations.padding,
-        keyboardAppearance: configurations.keyboardAppearance,
-        embedBuilders: configurations.embedBuilders,
-        editorKey: configurations.editorKey,
-      ),
+      controller: controller,
+      configurations: configurations?.copyWith(),
     );
   }
 
+  /// The controller for the quill editor widget of flutter quill
+  final QuillController controller;
+
   /// The configurations for the quill editor widget of flutter quill
-  final QuillEditorConfigurations configurations;
+  QuillEditorConfigurations get configurations =>
+      controller.editorConfigurations;
 
   /// Controls whether this editor has keyboard focus.
   final FocusNode focusNode;
@@ -167,14 +221,13 @@ class QuillEditorState extends State<QuillEditor>
   late EditorTextSelectionGestureDetectorBuilder
       _selectionGestureDetectorBuilder;
 
-  QuillEditorConfigurations get configurations {
-    return widget.configurations;
-  }
+  QuillController get controller => widget.controller;
+
+  QuillEditorConfigurations get configurations => widget.configurations;
 
   @override
   void initState() {
     super.initState();
-
     _editorKey = configurations.editorKey ?? GlobalKey<EditorState>();
     _selectionGestureDetectorBuilder =
         _QuillEditorSelectionGestureDetectorBuilder(
@@ -182,9 +235,7 @@ class QuillEditorState extends State<QuillEditor>
       configurations.detectWordBoundary,
     );
 
-    final focusNode =
-        widget.configurations.controller.editorFocusNode ?? widget.focusNode;
-    widget.configurations.controller.editorFocusNode = focusNode;
+    final focusNode = widget.focusNode;
 
     if (configurations.autoFocus) {
       focusNode.requestFocus();
@@ -240,13 +291,13 @@ class QuillEditorState extends State<QuillEditor>
 
     final child = FlutterQuillLocalizationsWidget(
       child: QuillEditorProvider(
-        editorConfigurations: configurations,
+        controller: controller,
         child: QuillEditorBuilderWidget(
           builder: configurations.builder,
           child: QuillRawEditor(
             key: _editorKey,
+            controller: controller,
             configurations: QuillRawEditorConfigurations(
-              controller: configurations.controller,
               focusNode: widget.focusNode,
               scrollController: widget.scrollController,
               scrollable: configurations.scrollable,
@@ -254,7 +305,7 @@ class QuillEditorState extends State<QuillEditor>
                   configurations.enableMarkdownStyleConversion,
               scrollBottomInset: configurations.scrollBottomInset,
               padding: configurations.padding,
-              readOnly: configurations.readOnly,
+              readOnly: controller.readOnly,
               checkBoxReadOnly: configurations.checkBoxReadOnly,
               disableClipboard: configurations.disableClipboard,
               placeholder: configurations.placeholder,
@@ -444,20 +495,20 @@ class _QuillEditorSelectionGestureDetectorBuilder
     editor?.updateMagnifier(details.globalPosition);
   }
 
-  bool _isPositionSelected(TapUpDetails details) {
-    if (_state.configurations.controller.document.isEmpty()) {
+  bool _isPositionSelected(TapDragUpDetails details) {
+    if (_state.controller.document.isEmpty()) {
       return false;
     }
     final pos = renderEditor!.getPositionForOffset(details.globalPosition);
-    final result = editor!.widget.configurations.controller.document
-        .querySegmentLeafNode(pos.offset);
+    final result =
+        editor!.widget.controller.document.querySegmentLeafNode(pos.offset);
     final line = result.line;
     if (line == null) {
       return false;
     }
     final segmentLeaf = result.leaf;
     if (segmentLeaf == null && line.length == 1) {
-      editor!.widget.configurations.controller.updateSelection(
+      editor!.widget.controller.updateSelection(
         TextSelection.collapsed(offset: pos.offset),
         ChangeSource.local,
       );
@@ -467,7 +518,7 @@ class _QuillEditorSelectionGestureDetectorBuilder
   }
 
   @override
-  void onTapDown(TapDownDetails details) {
+  void onTapDown(TapDragDownDetails details) {
     if (_state.configurations.onTapDown != null) {
       if (renderEditor != null &&
           _state.configurations.onTapDown!(
@@ -488,7 +539,7 @@ class _QuillEditorSelectionGestureDetectorBuilder
   }
 
   @override
-  void onSingleTapUp(TapUpDetails details) {
+  void onSingleTapUp(TapDragUpDetails details) {
     if (_state.configurations.onTapUp != null &&
         renderEditor != null &&
         _state.configurations.onTapUp!(
@@ -694,6 +745,7 @@ class RenderEditor extends RenderEditableContainerBox
   Document document;
   TextSelection selection;
   bool _hasFocus = false;
+  bool get hasFocus => _hasFocus;
   LayerLink _startHandleLayerLink;
   LayerLink _endHandleLayerLink;
 
@@ -867,11 +919,22 @@ class RenderEditor extends RenderEditableContainerBox
 
     final extentNode = _container.queryChild(textSelection.end, false).node;
     RenderEditableBox? extentChild = baseChild;
-    while (extentChild != null) {
-      if (extentChild.container == extentNode) {
-        break;
+
+    /// Trap shortening the text of a link which can cause selection to extend off end of line
+    if (extentNode == null) {
+      while (true) {
+        final next = childAfter(extentChild);
+        if (next == null) {
+          break;
+        }
       }
-      extentChild = childAfter(extentChild);
+    } else {
+      while (extentChild != null) {
+        if (extentChild.container == extentNode) {
+          break;
+        }
+        extentChild = childAfter(extentChild);
+      }
     }
     assert(extentChild != null);
 
@@ -889,11 +952,19 @@ class RenderEditor extends RenderEditableContainerBox
   }
 
   Offset? _lastTapDownPosition;
+  Offset? _lastSecondaryTapDownPosition;
+
+  Offset? get lastSecondaryTapDownPosition => _lastSecondaryTapDownPosition;
 
   // Used on Desktop (mouse and keyboard enabled platforms) as base offset
   // for extending selection, either with combination of `Shift` + Click or
   // by dragging
   TextSelection? _extendSelectionOrigin;
+
+  void handleSecondaryTapDown(TapDownDetails details) {
+    _lastTapDownPosition = details.globalPosition;
+    _lastSecondaryTapDownPosition = details.globalPosition;
+  }
 
   @override
   void handleTapDown(TapDownDetails details) {
@@ -906,7 +977,7 @@ class RenderEditor extends RenderEditableContainerBox
 
   bool _isDragging = false;
 
-  void handleDragStart(DragStartDetails details) {
+  void handleDragStart(TapDragStartDetails details) {
     _isDragging = true;
 
     final newSelection = selectPositionAt(
@@ -919,7 +990,7 @@ class RenderEditor extends RenderEditableContainerBox
     _extendSelectionOrigin = newSelection;
   }
 
-  void handleDragEnd(DragEndDetails details) {
+  void handleDragEnd(TapDragEndDetails details) {
     _isDragging = false;
     onSelectionCompleted();
   }

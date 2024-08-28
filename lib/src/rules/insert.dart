@@ -415,7 +415,7 @@ class AutoFormatMultipleLinksRule extends InsertRule {
     // Get word after insertion.
     final rightWordPart = entireText
         // Keep all text after insertion.
-        .substring(index)
+        .substring(index +(len ?? 0))
         // Keep first paragraph.
         .split('\n')
         .first
@@ -455,7 +455,7 @@ class AutoFormatMultipleLinksRule extends InsertRule {
     // Build base delta.
     // The base delta is a simple insertion delta.
     final baseDelta = Delta()
-      ..retain(index)
+      ..retain(index + (len ?? 0))
       ..insert(data);
 
     // Get unchanged text length.
@@ -563,16 +563,21 @@ class PreserveInlineStylesRule extends InsertRule {
     final itr = DeltaIterator(documentDelta);
     len ??= 0;
     var prev = itr.skip(len == 0 ? index : index + 1);
-    var excludeLinkAtLineStart = false;
+    var excludeLink = false;
 
     /// Process simple insertions at start of line
     if (len == 0) {
       final currLine = itr.next();
 
-      /// Trap for previous is not text with attributes
+      /// Prevent links extending beyond the link's text label.
+      excludeLink =
+          currLine.attributes?.containsKey(Attribute.link.key) != true &&
+              prev?.attributes?.containsKey(Attribute.link.key) == true;
+
+      /// Trap for previous is not text
       if (prev?.data is! String) {
         prev = currLine;
-        excludeLinkAtLineStart = true;
+        excludeLink = true;
       } else {
         final prevData = prev!.data as String;
         if (prevData.endsWith('\n')) {
@@ -583,13 +588,17 @@ class PreserveInlineStylesRule extends InsertRule {
             if (prevData.trimRight().isEmpty) {
               final back =
                   DeltaIterator(documentDelta).skip(index - prevData.length);
-              if (back != null && back.data is String) {
+
+              /// Prevent link attribute from propagating over line break
+              if (back != null &&
+                  back.data is String &&
+                  back.attributes?.containsKey(Attribute.link.key) != true) {
                 prev = back;
               }
             }
           } else {
             prev = currLine;
-            excludeLinkAtLineStart = true;
+            excludeLink = true;
           }
         }
       }
@@ -607,7 +616,7 @@ class PreserveInlineStylesRule extends InsertRule {
       return null;
     }
 
-    if (excludeLinkAtLineStart) {
+    if (excludeLink) {
       attributes.remove(Attribute.link.key);
     }
     return Delta()

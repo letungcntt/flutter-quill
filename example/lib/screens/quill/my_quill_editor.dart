@@ -7,10 +7,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/extensions.dart'
     show isAndroid, isDesktop, isIOS, isWeb;
 import 'package:flutter_quill/flutter_quill.dart';
-import 'package:flutter_quill_extensions/embeds/widgets/image.dart'
-    show getImageProviderByImageSource, imageFileExtensions;
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
-import 'package:flutter_quill_extensions/models/config/video/editor/youtube_video_support_mode.dart';
+// ignore: implementation_imports
+import 'package:flutter_quill_extensions/src/editor/image/widgets/image.dart'
+    show getImageProviderByImageSource, imageFileExtensions;
 import 'package:path/path.dart' as path;
 
 import '../../extensions/scaffold_messenger.dart';
@@ -18,12 +18,14 @@ import 'embeds/timestamp_embed.dart';
 
 class MyQuillEditor extends StatelessWidget {
   const MyQuillEditor({
+    required this.controller,
     required this.configurations,
     required this.scrollController,
     required this.focusNode,
     super.key,
   });
 
+  final QuillController controller;
   final QuillEditorConfigurations configurations;
   final ScrollController scrollController;
   final FocusNode focusNode;
@@ -34,6 +36,7 @@ class MyQuillEditor extends StatelessWidget {
     return QuillEditor(
       scrollController: scrollController,
       focusNode: focusNode,
+      controller: controller,
       configurations: configurations.copyWith(
         elementOptions: const QuillEditorElementOptions(
           codeBlock: QuillEditorCodeBlockElementOptions(
@@ -51,9 +54,9 @@ class MyQuillEditor extends StatelessWidget {
               height: 1.15,
               fontWeight: FontWeight.w300,
             ),
-            const HorizontalSpacing(0, 0),
+            HorizontalSpacing.zero,
             const VerticalSpacing(16, 0),
-            const VerticalSpacing(0, 0),
+            VerticalSpacing.zero,
             null,
           ),
           sizeSmall: defaultTextStyle.style.copyWith(fontSize: 9),
